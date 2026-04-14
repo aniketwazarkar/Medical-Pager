@@ -16,11 +16,47 @@ import (
 
 func RegisterRoutes(app fiber.Router) {
 	group := app.Group("/users")
-	group.Use(middleware.Protected(), middleware.RequireSameTenant(), middleware.RequireRole(middleware.AdminRoles...))
+	
+	// Self-management (any authenticated user)
+	group.Put("/me", middleware.Protected(), UpdateSelf)
 
-	group.Get("/", GetUsers)
-	group.Post("/", CreateUser)
-	group.Put("/:id/role", UpdateUserRole)
+	// Admin management (tenant_admin or super_admin only)
+	adminGroup := group.Group("/")
+	adminGroup.Use(middleware.Protected(), middleware.RequireSameTenant(), middleware.RequireRole(middleware.AdminRoles...))
+	adminGroup.Get("/", GetUsers)
+	adminGroup.Post("/", CreateUser)
+	adminGroup.Put("/:id/role", UpdateUserRole)
+}
+
+func UpdateSelf(c *fiber.Ctx) error {
+	userIdHex := c.Locals("userId").(string)
+	userId, err := primitive.ObjectIDFromHex(userIdHex)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user context"})
+	}
+
+	var input struct {
+		Name string `json:"name"`
+	}
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
+	}
+
+	if input.Name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name cannot be empty"})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	update := bson.M{"$set": bson.M{"name": input.Name, "updatedAt": time.Now()}}
+	result, err := db.GetCollection("users").UpdateOne(ctx, bson.M{"_id": userId}, update)
+
+	if err != nil || result.MatchedCount == 0 {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update profile"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Profile updated successfully", "name": input.Name})
 }
 
 func CreateUser(c *fiber.Ctx) error {

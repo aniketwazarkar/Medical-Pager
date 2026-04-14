@@ -76,6 +76,12 @@ func SendMessage(c *fiber.Ctx) error {
 		patientId = &pId
 	}
 
+	// Look up sender name so the message carries it for chat display
+	var senderUser models.User
+	senderCtx, senderCancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer senderCancel()
+	db.GetCollection("users").FindOne(senderCtx, bson.M{"_id": senderId}).Decode(&senderUser)
+
 	// The content is already encrypted by the client, simply store it!
 	encCont := input.EncryptedContent
 
@@ -84,6 +90,7 @@ func SendMessage(c *fiber.Ctx) error {
 		TenantID:         tenantId,
 		ChannelID:        channelId,
 		SenderID:         senderId,
+		SenderName:       senderUser.Name,
 		EncryptedContent: encCont,
 		MessageType:      input.MessageType,
 		Priority:         input.Priority,

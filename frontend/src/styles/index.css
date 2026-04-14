@@ -19,10 +19,14 @@
   --text-main: #f9fafb;
   --text-muted: #9ca3af;
   --border-color: #1f2937;
+  --hover-bg: #1f2937;
   --primary: #60a5fa;
   --primary-hover: #3b82f6;
   --danger: #f87171;
   --danger-light: #7f1d1d;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error: #f87171;
 }
 
 * {
@@ -80,27 +84,38 @@ body {
   display: flex;
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
+  position: relative;
 }
 
 .sidebar {
-  width: 260px;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
   background-color: var(--panel-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .main-chat {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-color);
+  overflow: hidden;
 }
 
 .right-panel {
-  width: 320px;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
   background-color: var(--panel-bg);
   border-left: 1px solid var(--border-color);
+  overflow-y: auto;
 }
 
 /* Input fields */

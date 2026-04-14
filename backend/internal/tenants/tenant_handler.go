@@ -16,7 +16,7 @@ func RegisterRoutes(app fiber.Router) {
 	group := app.Group("/tenants")
 	
 	// Protected by JWT and requires strict 'super_admin' role
-	group.Use(middleware.Protected(), middleware.RequireRole("super_admin"))
+	group.Use(middleware.Protected(), middleware.RequireRole(middleware.SuperOnly...))
 
 	group.Get("/", GetTenants)
 }

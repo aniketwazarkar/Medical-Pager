@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Settings, Plus, LayoutGrid } from 'lucide-react';
 
 interface TenantData {
@@ -28,8 +28,7 @@ const SuperAdminDashboard = () => {
     }
   }, [role, token]);
 
-  if (!isAuthenticated) return <Navigate to="/login" />;
-  if (role !== 'super_admin') return <Navigate to="/" />;
+  if (!isAuthenticated) return null; // RoleGuard in App.tsx handles redirect
 
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', overflowY: 'auto' }}>

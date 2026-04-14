@@ -44,6 +44,7 @@ type Message struct {
 	TenantID         primitive.ObjectID  `bson:"tenantId" json:"tenantId"`
 	ChannelID        primitive.ObjectID  `bson:"channelId" json:"channelId"`
 	SenderID         primitive.ObjectID  `bson:"senderId" json:"senderId"`
+	SenderName       string              `bson:"senderName" json:"senderName"`
 	EncryptedContent string              `bson:"encryptedContent" json:"encryptedContent"`
 	MessageType      string              `bson:"messageType" json:"messageType"` // text, alert, patient_linked, broadcast
 	Priority         string              `bson:"priority" json:"priority"`       // normal, urgent, critical

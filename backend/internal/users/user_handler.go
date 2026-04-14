@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 
 	"medical-pager/internal/db"
 	"medical-pager/internal/middleware"
@@ -15,12 +16,63 @@ import (
 
 func RegisterRoutes(app fiber.Router) {
 	group := app.Group("/users")
-	
-	// Protected by JWT and requires 'tenant_admin' or 'super_admin' roles
-	group.Use(middleware.Protected(), middleware.RequireSameTenant(), middleware.RequireRole("tenant_admin", "super_admin"))
+	group.Use(middleware.Protected(), middleware.RequireSameTenant(), middleware.RequireRole(middleware.AdminRoles...))
 
 	group.Get("/", GetUsers)
+	group.Post("/", CreateUser)
 	group.Put("/:id/role", UpdateUserRole)
+}
+
+func CreateUser(c *fiber.Ctx) error {
+	var input struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Role     string `json:"role"`
+	}
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
+	}
+
+	validRoles := map[string]bool{
+		middleware.RoleDoctor:      true,
+		middleware.RoleNurse:       true,
+		middleware.RoleStaff:       true,
+		middleware.RoleTenantAdmin: true,
+	}
+	if !validRoles[input.Role] {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid role"})
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(input.Password), 12)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to hash password"})
+	}
+
+	tenantIdHex := c.Locals("tenantId").(string)
+	tenantId, _ := primitive.ObjectIDFromHex(tenantIdHex)
+
+	user := models.User{
+		ID:        primitive.NewObjectID(),
+		TenantID:  tenantId,
+		Email:     input.Email,
+		Password:  string(hashed),
+		Name:      input.Name,
+		Role:      input.Role,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = db.GetCollection("users").InsertOne(ctx, user)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create user"})
+	}
+
+	user.Password = ""
+	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
 func GetUsers(c *fiber.Ctx) error {
@@ -66,8 +118,13 @@ func UpdateUserRole(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
 	}
 
-	// Validate allowed roles
-	validRoles := map[string]bool{"doctor": true, "nurse": true, "staff": true, "tenant_admin": true}
+	// Validate allowed roles — super_admin cannot be assigned via this endpoint
+	validRoles := map[string]bool{
+		middleware.RoleDoctor:      true,
+		middleware.RoleNurse:       true,
+		middleware.RoleStaff:       true,
+		middleware.RoleTenantAdmin: true,
+	}
 	if !validRoles[input.Role] {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid role assignment"})
 	}

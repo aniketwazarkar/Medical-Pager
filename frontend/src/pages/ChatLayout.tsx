@@ -9,6 +9,7 @@ interface Message {
   encryptedContent: string;
   priority?: string;
   senderId?: string;
+  senderName?: string;
   createdAt?: string;
 }
 
@@ -292,25 +293,36 @@ return (
       </div>
 
       <div style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {messages.map((m, i) => (
-          <div key={m.id || i} style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{ width: 40, height: 40, borderRadius: '0.375rem', backgroundColor: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Users size={20} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <span style={{ fontWeight: 600 }}>User</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : new Date().toLocaleTimeString()}
-                </span>
-                {m.priority === 'urgent' && <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}><AlertCircle size={12} /> Urgent</span>}
+        {messages.map((m, i) => {
+          const displayName = m.senderName || 'Unknown';
+          const initial = displayName.charAt(0).toUpperCase();
+          const isOwn = m.senderId === user?.id;
+          return (
+            <div key={m.id || i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+              {/* Avatar: initials with color */}
+              <div style={{
+                width: 36, height: 36, borderRadius: '0.375rem', flexShrink: 0,
+                backgroundColor: isOwn ? 'var(--primary)' : 'var(--border-color)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: '0.85rem', color: 'white'
+              }}>
+                {initial}
               </div>
-              <div style={{ color: 'var(--text-main)', lineHeight: 1.5 }}>
-                {m.encryptedContent}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{displayName}</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    {m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : new Date().toLocaleTimeString()}
+                  </span>
+                  {m.priority === 'urgent' && <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem' }}><AlertCircle size={11}/> Urgent</span>}
+                </div>
+                <div style={{ color: 'var(--text-main)', lineHeight: 1.55, wordBreak: 'break-word' }}>
+                  {m.encryptedContent}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {messages.length === 0 && (
           <div style={{ margin: 'auto', color: 'var(--text-muted)' }}>No messages yet. Start the conversation!</div>
         )}

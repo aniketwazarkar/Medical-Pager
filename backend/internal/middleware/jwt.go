@@ -67,7 +67,7 @@ func RequireRole(roles ...string) fiber.Handler {
 func RequireSameTenant() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userRole, _ := c.Locals("role").(string)
-		if userRole == "super_admin" {
+		if userRole == RoleSuperAdmin {
 			return c.Next()
 		}
 

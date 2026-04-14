@@ -5,10 +5,21 @@
       "type": "npm",
       "script": "dev",
       "path": "frontend",
-      "problemMatcher": [],
-      "label": "npm: dev",
-      "detail": "Run frontend development server",
-      "isBackground": true
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "typescript",
+        "pattern": "$tsc",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\s*VITE\\s+v\\d+\\.\\d+\\.\\d+\\s+ready\\s+in\\s+\\d+\\s*ms",
+          "endsPattern": "^\\s*➜\\s+Local:\\s+http://localhost:5173/?"
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
     }
   ]
 }

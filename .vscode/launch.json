@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Backend (Go)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/backend/cmd/server",
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "PORT": "8080"
+      }
+    },
+    {
+      "name": "Launch Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "preLaunchTask": "npm: dev"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack",
+      "configurations": ["Launch Backend (Go)", "Launch Frontend (Chrome)"]
+    }
+  ]
+}

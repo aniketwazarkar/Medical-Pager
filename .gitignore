@@ -1,0 +1,36 @@
+# ============================================
+# Medical Pager - .gitignore
+# ============================================
+
+# Environment variables - NEVER commit these
+.env
+backend/.env
+frontend/.env
+
+# Go build artifacts
+backend/tmp/
+backend/*.exe
+backend/*.test
+
+# Node.js
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Go module cache
+go/pkg/mod/

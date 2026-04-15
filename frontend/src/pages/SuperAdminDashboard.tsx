@@ -13,6 +13,14 @@ const SuperAdminDashboard = () => {
   const { user, token, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [tenants, setTenants] = useState<TenantData[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [newTenant, setNewTenant] = useState({ 
+    name: '', 
+    domain: '',
+    adminName: '',
+    adminEmail: '',
+    adminPassword: ''
+  });
   const role = user?.role;
 
   useEffect(() => {
@@ -29,6 +37,34 @@ const SuperAdminDashboard = () => {
   }, [role, token]);
 
   if (!isAuthenticated) return null; // RoleGuard in App.tsx handles redirect
+
+  const handleAddTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:8080/api/v1/tenants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newTenant)
+      });
+      if (!res.ok) throw new Error('Failed to create tenant');
+      const data = await res.json();
+      setTenants([...tenants, data]);
+      setShowModal(false);
+      setNewTenant({ 
+        name: '', 
+        domain: '',
+        adminName: '',
+        adminEmail: '',
+        adminPassword: '' 
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Error creating tenant');
+    }
+  };
 
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', overflowY: 'auto' }}>
@@ -57,7 +93,9 @@ const SuperAdminDashboard = () => {
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h3>Manage Tenants</h3>
-            <button className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Plus size={16} /> Add Tenant</button>
+            <button className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => setShowModal(true)}>
+              <Plus size={16} /> Add Tenant
+            </button>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -89,6 +127,70 @@ const SuperAdminDashboard = () => {
           </table>
         </div>
       </div>
+
+      {showModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ padding: '2rem', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>Add New Tenant</h3>
+            <form onSubmit={handleAddTenant}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Hospital / Name</label>
+                <input 
+                  type="text" 
+                  className="input-control" 
+                  value={newTenant.name}
+                  onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
+                  required 
+                />
+              </div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Domain</label>
+                <input 
+                  type="text" 
+                  className="input-control" 
+                  value={newTenant.domain}
+                  onChange={(e) => setNewTenant({ ...newTenant, domain: e.target.value })}
+                  required 
+                />
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Admin Name</label>
+                <input 
+                  type="text" 
+                  className="input-control" 
+                  value={newTenant.adminName}
+                  onChange={(e) => setNewTenant({ ...newTenant, adminName: e.target.value })}
+                  required 
+                />
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Admin Email</label>
+                <input 
+                  type="email" 
+                  className="input-control" 
+                  value={newTenant.adminEmail}
+                  onChange={(e) => setNewTenant({ ...newTenant, adminEmail: e.target.value })}
+                  required 
+                />
+              </div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Admin Password</label>
+                <input 
+                  type="password" 
+                  className="input-control" 
+                  value={newTenant.adminPassword}
+                  onChange={(e) => setNewTenant({ ...newTenant, adminPassword: e.target.value })}
+                  required 
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="btn" style={{ flex: 1 }}>Create</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

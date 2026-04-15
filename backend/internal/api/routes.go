@@ -7,6 +7,7 @@ import (
 	"medical-pager/internal/channels"
 	"medical-pager/internal/encryption"
 	"medical-pager/internal/messages"
+	"medical-pager/internal/middleware"
 	"medical-pager/internal/tenants"
 	"medical-pager/internal/users"
 	"medical-pager/internal/websocket"
@@ -26,4 +27,7 @@ func SetupRoutes(app *fiber.App) {
 	channels.RegisterRoutes(api)
 	users.RegisterRoutes(api)
 	tenants.RegisterRoutes(api)
+
+	// Roles — returns assignable roles from data/roles.json (backend-authoritative)
+	api.Get("/roles", middleware.Protected(), middleware.GetAssignableRoles)
 }

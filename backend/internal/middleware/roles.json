@@ -1,0 +1,37 @@
+[
+  {
+    "value": "super_admin",
+    "label": "Super Admin",
+    "description": "System-wide owner with full access to all tenants and configurations.",
+    "assignable": false,
+    "groups": ["AllRoles", "AdminRoles", "SuperOnly", "ClinicalRoles"]
+  },
+  {
+    "value": "tenant_admin",
+    "label": "Tenant Admin",
+    "description": "Administrator for a specific hospital tenant. Can manage staff, users, and channels.",
+    "assignable": true,
+    "groups": ["AllRoles", "AdminRoles", "ClinicalRoles"]
+  },
+  {
+    "value": "doctor",
+    "label": "Doctor",
+    "description": "Licensed physician. Full access to clinical channels and patient context.",
+    "assignable": true,
+    "groups": ["AllRoles", "ClinicalRoles"]
+  },
+  {
+    "value": "nurse",
+    "label": "Nurse",
+    "description": "Nursing staff. Can receive urgent pages and participate in care channels.",
+    "assignable": true,
+    "groups": ["AllRoles", "ClinicalRoles"]
+  },
+  {
+    "value": "staff",
+    "label": "Staff",
+    "description": "General hospital staff with basic messaging access.",
+    "assignable": true,
+    "groups": ["AllRoles", "ClinicalRoles"]
+  }
+]

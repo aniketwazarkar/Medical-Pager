@@ -70,13 +70,7 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
 	}
 
-	validRoles := map[string]bool{
-		middleware.RoleDoctor:      true,
-		middleware.RoleNurse:       true,
-		middleware.RoleStaff:       true,
-		middleware.RoleTenantAdmin: true,
-	}
-	if !validRoles[input.Role] {
+	if !middleware.AssignableRoles[input.Role] {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid role"})
 	}
 
@@ -154,14 +148,9 @@ func UpdateUserRole(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
 	}
 
-	// Validate allowed roles — super_admin cannot be assigned via this endpoint
-	validRoles := map[string]bool{
-		middleware.RoleDoctor:      true,
-		middleware.RoleNurse:       true,
-		middleware.RoleStaff:       true,
-		middleware.RoleTenantAdmin: true,
-	}
-	if !validRoles[input.Role] {
+	// Validate allowed roles — super_admin cannot be assigned via this endpoint.
+	// AssignableRoles is derived from data/roles.json at startup.
+	if !middleware.AssignableRoles[input.Role] {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid role assignment"})
 	}
 

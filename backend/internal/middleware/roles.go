@@ -1,40 +1,106 @@
 package middleware
 
-// Role constants — single source of truth for all roles in the system.
-// All authorization decisions are enforced here on the backend;
-// the frontend only reads these values from the JWT for UX purposes.
-const (
-	RoleSuperAdmin   = "super_admin"
-	RoleTenantAdmin  = "tenant_admin"
-	RoleDoctor       = "doctor"
-	RoleNurse        = "nurse"
-	RoleStaff        = "staff"
+import (
+	_ "embed"
+	"encoding/json"
+	"log"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-// AllRoles lists every valid role in the system.
-var AllRoles = []string{
-	RoleSuperAdmin,
-	RoleTenantAdmin,
-	RoleDoctor,
-	RoleNurse,
-	RoleStaff,
+// -----------------------------------------------------------------
+// Embed the authoritative role definitions at compile time.
+// File: backend/internal/middleware/roles.json
+// -----------------------------------------------------------------
+
+//go:embed roles.json
+var rolesJSON []byte
+
+// RoleDefinition mirrors one entry from data/roles.json.
+type RoleDefinition struct {
+	Value       string   `json:"value"`
+	Label       string   `json:"label"`
+	Description string   `json:"description"`
+	Assignable  bool     `json:"assignable"`
+	Groups      []string `json:"groups"`
 }
 
-// AdminRoles are roles that can manage tenants and users.
-var AdminRoles = []string{RoleSuperAdmin, RoleTenantAdmin}
+// Roles holds all role definitions loaded from JSON.
+var Roles []RoleDefinition
 
-// SuperOnly restricts to system owner only.
-var SuperOnly = []string{RoleSuperAdmin}
+// AssignableRoles is a fast-lookup set of roles that can be assigned to users
+// (i.e. excludes super_admin which is never assignable via normal endpoints).
+var AssignableRoles map[string]bool
 
-// ClinicalRoles are roles that can access clinical channels and messages.
-var ClinicalRoles = []string{RoleSuperAdmin, RoleTenantAdmin, RoleDoctor, RoleNurse, RoleStaff}
+// Role constants — kept for type-safe use across the codebase.
+// These are validated against the JSON at init so they stay in sync.
+const (
+	RoleSuperAdmin  = "super_admin"
+	RoleTenantAdmin = "tenant_admin"
+	RoleDoctor      = "doctor"
+	RoleNurse       = "nurse"
+	RoleStaff       = "staff"
+)
 
-// IsValidRole checks whether a role string is a recognized system role.
+// Derived role group slices — built from the JSON at init.
+var (
+	AllRoles      []string
+	AdminRoles    []string
+	SuperOnly     []string
+	ClinicalRoles []string
+)
+
+func init() {
+	if err := json.Unmarshal(rolesJSON, &Roles); err != nil {
+		log.Fatalf("[roles] Failed to parse data/roles.json: %v", err)
+	}
+
+	AssignableRoles = make(map[string]bool, len(Roles))
+
+	groupSet := map[string]*[]string{
+		"AllRoles":      &AllRoles,
+		"AdminRoles":    &AdminRoles,
+		"SuperOnly":     &SuperOnly,
+		"ClinicalRoles": &ClinicalRoles,
+	}
+
+	for _, r := range Roles {
+		if r.Assignable {
+			AssignableRoles[r.Value] = true
+		}
+		for _, g := range r.Groups {
+			if slice, ok := groupSet[g]; ok {
+				*slice = append(*slice, r.Value)
+			}
+		}
+	}
+
+	log.Printf("[roles] Loaded %d roles from data/roles.json (%d assignable)",
+		len(Roles), len(AssignableRoles))
+}
+
+// IsValidRole reports whether role is a recognised system role.
 func IsValidRole(role string) bool {
-	for _, r := range AllRoles {
-		if r == role {
+	for _, r := range Roles {
+		if r.Value == role {
 			return true
 		}
 	}
 	return false
+}
+
+// -----------------------------------------------------------------
+// GET /api/v1/roles
+// Returns the list of roles that are assignable by admins.
+// Requires a valid JWT (Protected middleware applied in routes.go).
+// -----------------------------------------------------------------
+
+func GetAssignableRoles(c *fiber.Ctx) error {
+	var assignable []RoleDefinition
+	for _, r := range Roles {
+		if r.Assignable {
+			assignable = append(assignable, r)
+		}
+	}
+	return c.JSON(assignable)
 }

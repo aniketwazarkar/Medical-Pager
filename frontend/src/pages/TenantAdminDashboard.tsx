@@ -10,18 +10,28 @@ interface UserData {
   role: string;
 }
 
+// UI-only colour palette — kept here since colour is a frontend concern.
+// Extend this if new roles are added in data/roles.json.
 const ROLE_COLORS: Record<string, string> = {
-  super_admin: '#a78bfa',
+  super_admin:  '#a78bfa',
   tenant_admin: '#60a5fa',
-  doctor: '#34d399',
-  nurse: '#fb923c',
-  staff: '#9ca3af',
+  doctor:       '#34d399',
+  nurse:        '#fb923c',
+  staff:        '#9ca3af',
 };
+
+interface RoleDefinition {
+  value: string;
+  label: string;
+  description: string;
+  assignable: boolean;
+}
 
 const TenantAdminDashboard = () => {
   const { user, token, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserData[]>([]);
+  const [roles, setRoles] = useState<RoleDefinition[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'doctor' });
   const [addError, setAddError] = useState('');
@@ -36,6 +46,23 @@ const TenantAdminDashboard = () => {
       .then(data => { if (Array.isArray(data)) setUsers(data); })
       .catch(console.error);
   };
+
+  // Fetch assignable roles from backend (single source of truth)
+  useEffect(() => {
+    if (!token) return;
+    fetch('http://localhost:8080/api/v1/roles', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setRoles(data);
+          // Set default role for new user form to first assignable role
+          setNewUser(prev => ({ ...prev, role: data[0]?.value ?? 'doctor' }));
+        }
+      })
+      .catch(console.error);
+  }, [token]);
 
   useEffect(() => {
     fetchUsers();
@@ -207,10 +234,9 @@ const TenantAdminDashboard = () => {
                           fontSize: '0.8rem', cursor: 'pointer'
                         }}
                       >
-                        <option value="doctor">Doctor</option>
-                        <option value="nurse">Nurse</option>
-                        <option value="staff">Staff</option>
-                        <option value="tenant_admin">Tenant Admin</option>
+                        {roles.map(r => (
+                          <option key={r.value} value={r.value}>{r.label}</option>
+                        ))}
                       </select>
                     ) : (
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Owner</span>
@@ -258,10 +284,9 @@ const TenantAdminDashboard = () => {
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Role</label>
                 <select className="input-control" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
-                  <option value="doctor">Doctor</option>
-                  <option value="nurse">Nurse</option>
-                  <option value="staff">Staff</option>
-                  <option value="tenant_admin">Tenant Admin</option>
+                  {roles.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
                 </select>
               </div>
 

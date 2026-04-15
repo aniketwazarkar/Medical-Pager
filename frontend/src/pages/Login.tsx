@@ -31,7 +31,13 @@ const Login = () => {
       }
 
       login(data.user, data.token);
-      navigate('/');
+      if (data.user.role === 'super_admin') {
+        navigate('/super-admin');
+      } else if (data.user.role === 'tenant_admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError(String(err));
